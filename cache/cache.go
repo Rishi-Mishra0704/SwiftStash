@@ -40,6 +40,11 @@ func (c *Cache) Set(key, value []byte, ttl time.Duration) error {
 	defer c.Lock.Unlock()
 
 	c.Data[string(key)] = value
+	ticker := time.NewTicker(ttl)
+	go func() {
+		<-ticker.C
+		delete(c.Data, string(key))
+	}()
 
 	return nil
 }

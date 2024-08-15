@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"github.com/Rishi-Mishra0704/SwiftStash/cache"
+	"github.com/Rishi-Mishra0704/SwiftStash/cmd"
 )
 
 type ServerOpts struct {
@@ -62,7 +63,29 @@ func (s *Server) handleConn(conn net.Conn) {
 			break
 		}
 		msg := buf[:n]
-		fmt.Println(string(msg))
+		go s.handleCMD(conn, msg)
 	}
 
+}
+
+func (s *Server) handleCMD(conn net.Conn, rawCmd []byte) {
+	msg, err := cmd.ParseMessage(rawCmd)
+	if err != nil {
+		log.Printf("Error parsing command: %s", err)
+		return
+	}
+	switch msg.Command {
+	case cmd.CMDSET:
+		if err := s.handleSET(conn, msg); err != nil {
+			log.Printf("Error handling SET command: %s", err)
+			return
+		}
+	}
+
+}
+
+func (s *Server) handleSET(conn net.Conn, msg *cmd.Message) error {
+	fmt.Printf("Received SET command: %v\n", msg)
+
+	return nil
 }
