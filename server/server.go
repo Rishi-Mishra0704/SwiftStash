@@ -1,7 +1,7 @@
 package server
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"net"
 
@@ -69,23 +69,53 @@ func (s *Server) handleConn(conn net.Conn) {
 }
 
 func (s *Server) handleCMD(conn net.Conn, rawCmd []byte) {
-	msg, err := cmd.ParseMessage(rawCmd)
+
+	var (
+		msg *cmd.Message
+		err error
+	)
+
+	msg, err = cmd.ParseMessage(rawCmd)
 	if err != nil {
 		log.Printf("Error parsing command: %s", err)
 		return
 	}
+
 	switch msg.Command {
 	case cmd.CMDSET:
-		if err := s.handleSET(conn, msg); err != nil {
-			log.Printf("Error handling SET command: %s", err)
-			return
-		}
+		err = s.handleSET(conn, msg)
+	case cmd.CMDGET:
+		err = s.handleGET(conn, msg)
+	}
+
+	if err != nil {
+		log.Printf("Error handling command: %s", err)
+		conn.Write([]byte("ERR: " + err.Error()))
 	}
 
 }
 
 func (s *Server) handleSET(conn net.Conn, msg *cmd.Message) error {
-	fmt.Printf("Received SET command: %v\n", msg)
+
+	err := s.Cache.Set(msg.Key, msg.Value, msg.TTL)
+	if err != nil {
+		return err
+	}
+	go s.sendToFollower(context.TODO(), msg)
 
 	return nil
+}
+
+func (s *Server) sendToFollower(ctx context.Context, msg *cmd.Message) error {
+	return nil
+}
+
+func (s *Server) handleGET(conn net.Conn, msg *cmd.Message) error {
+	val, err := s.Cache.Get(msg.Key)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Write(val)
+
+	return err
 }
