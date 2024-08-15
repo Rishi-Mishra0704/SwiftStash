@@ -34,7 +34,7 @@ func (s *Server) Start() error {
 	}
 	defer ln.Close()
 
-	log.Printf("Server listening on %s", s.ListenAddr)
+	log.Printf("Server listening on [%s]", s.ListenAddr)
 
 	// handle connections
 	for {
