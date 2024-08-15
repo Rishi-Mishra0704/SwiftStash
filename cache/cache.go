@@ -1,4 +1,4 @@
-package main
+package cache
 
 import (
 	"fmt"
@@ -19,8 +19,9 @@ func NewCache() *Cache {
 	}
 }
 
-// Get retrieves a value from the cache
-func (c *Cache) Get(key string) ([]byte, error) {
+// Get implements the Cacher interface
+// It retrieves a value from the cache
+func (c *Cache) Get(key []byte) ([]byte, error) {
 	c.Lock.RLock()
 	defer c.Lock.RUnlock()
 	keyStr := string(key)
@@ -32,8 +33,9 @@ func (c *Cache) Get(key string) ([]byte, error) {
 	return val, nil
 }
 
-// Set sets a value in the cache
-func (c *Cache) Set(key, value []byte, ttl time.Duration) []byte {
+// Set implements the Cacher interface
+// It sets a key-value pair in the cache
+func (c *Cache) Set(key, value []byte, ttl time.Duration) error {
 	c.Lock.Lock()
 	defer c.Lock.Unlock()
 
@@ -42,6 +44,7 @@ func (c *Cache) Set(key, value []byte, ttl time.Duration) []byte {
 	return nil
 }
 
+// It implements the Cacher interface
 // Has checks if a key exists in the cache
 func (c *Cache) Has(key []byte) bool {
 	c.Lock.RLock()
@@ -52,6 +55,7 @@ func (c *Cache) Has(key []byte) bool {
 	return ok
 }
 
+// It implements the Cacher interface
 // Delete removes a key from the cache
 func (c *Cache) Delete(key []byte) error {
 	c.Lock.Lock()
