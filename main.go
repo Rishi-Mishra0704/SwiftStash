@@ -24,7 +24,7 @@ func main() {
 	}
 
 	go func() {
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 		client, err := client.NewClient(":3000", client.Options{})
 		if err != nil {
 			log.Fatal(err)
