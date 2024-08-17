@@ -11,4 +11,8 @@ run: build
 runFollower: build
 	./bin/SwiftStash --listenAddr :4000 --leaderAddr :3000 
 
-PHONY: clean build run runFollower
+test:
+	@go test -v ./...
+
+
+PHONY: clean build run runFollower test
