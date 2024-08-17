@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"time"
@@ -60,11 +61,16 @@ func (s *Server) handleConn(conn net.Conn) {
 	for {
 		cmd, err := cmd.ParseCommand(conn)
 		if err != nil {
+			if err == io.EOF {
+				break
+			}
 			log.Printf("Error parsing command: %s", err)
 			break
 		}
 		go s.HandleCommand(conn, cmd)
 	}
+
+	fmt.Println("Disconnected from ", conn.RemoteAddr().String())
 }
 
 func (s *Server) HandleCommand(conn net.Conn, command any) {

@@ -1,12 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
-	"net"
 	"time"
 
 	"github.com/Rishi-Mishra0704/SwiftStash/cache"
+	"github.com/Rishi-Mishra0704/SwiftStash/client"
 	"github.com/Rishi-Mishra0704/SwiftStash/cmd"
 	"github.com/Rishi-Mishra0704/SwiftStash/server"
 )
@@ -24,11 +25,18 @@ func main() {
 
 	go func() {
 		time.Sleep(2 * time.Second)
+		client, err := client.NewClient(":3000", client.Options{})
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		for i := 0; i < 10; i++ {
-			SendCommand()
+			SendCommand(client)
 			time.Sleep(200 * time.Millisecond)
 
 		}
+		client.Close()
+		time.Sleep(1 * time.Second)
 	}()
 	s := server.NewServer(opts, cache.NewCache())
 	err := s.Start()
@@ -37,16 +45,16 @@ func main() {
 	}
 }
 
-func SendCommand() {
+func SendCommand(c *client.Client) {
 	command := &cmd.CommandSet{
 		Key:   []byte("foo"),
 		Value: []byte("bar"),
 		TTL:   0,
 	}
 
-	conn, err := net.Dial("tcp", ":3000")
+	_, err := c.Set(context.Background(), command.Key, command.Value, command.TTL)
 	if err != nil {
 		log.Fatal(err)
 	}
-	conn.Write(command.Bytes())
+
 }
