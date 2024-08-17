@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 )
 
@@ -34,18 +35,18 @@ type CommandGet struct {
 }
 
 // ParseCommand parses a command from the reader
-func ParseCommand(r io.Reader) CommandParser {
+func ParseCommand(r io.Reader) (CommandParser, error) {
 	var cmd Command
 
 	binary.Read(r, binary.LittleEndian, &cmd)
 
 	switch cmd {
 	case CmdSET:
-		return ParseSetCommand(r)
+		return ParseSetCommand(r), nil
 	case CmdGET:
-		return ParseGetCommand(r)
+		return ParseGetCommand(r), nil
 	default:
-		panic("Invalid Command")
+		return nil, fmt.Errorf("invalid command")
 	}
 }
 

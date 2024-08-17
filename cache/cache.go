@@ -44,11 +44,12 @@ func (c *Cache) Set(key, value []byte, ttl time.Duration) error {
 
 	c.Data[string(key)] = value
 
-	log.Printf("SET %s to %s\n", string(key), string(value))
-	go func() {
-		<-time.After(ttl)
-		delete(c.Data, string(key))
-	}()
+	if ttl > 0 {
+		go func() {
+			<-time.After(ttl)
+			delete(c.Data, string(key))
+		}()
+	}
 
 	return nil
 }

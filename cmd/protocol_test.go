@@ -18,7 +18,8 @@ func TestParseSetCommand(t *testing.T) {
 	}
 	fmt.Println(command.Bytes())
 	r := bytes.NewReader(command.Bytes())
-	pCmd := ParseCommand(r)
+	pCmd, err := ParseCommand(r)
+	assert.Nil(t, err)
 	assert.Equal(t, command, pCmd)
 }
 func TestParseGetCommand(t *testing.T) {
@@ -27,7 +28,8 @@ func TestParseGetCommand(t *testing.T) {
 	}
 	fmt.Println(command.Bytes())
 	r := bytes.NewReader(command.Bytes())
-	pCmd := ParseCommand(r)
+	pCmd, err := ParseCommand(r)
+	assert.Nil(t, err)
 	assert.Equal(t, command, pCmd)
 }
 
@@ -36,10 +38,8 @@ func TestParseInvalidCommand(t *testing.T) {
 	command := []byte{255}
 	fmt.Println(command)
 	r := bytes.NewReader(command)
-
-	assert.Panics(t, func() {
-		ParseCommand(r)
-	}, "Expected ParseCommand to panic for invalid command")
+	_, err := ParseCommand(r)
+	assert.Error(t, err, "invalid command")
 }
 
 func BenchmarkParseCommand(b *testing.B) {

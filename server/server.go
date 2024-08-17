@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/Rishi-Mishra0704/SwiftStash/cache"
+	"github.com/Rishi-Mishra0704/SwiftStash/cmd"
 )
 
 type ServerOpts struct {
@@ -51,24 +53,42 @@ func (s *Server) Start() error {
 
 // handleConn handles incoming connections
 func (s *Server) handleConn(conn net.Conn) {
-	defer func() {
-		conn.Close()
-	}()
-	buf := make([]byte, 2048)
+	defer conn.Close()
+
 	fmt.Println("Connected to ", conn.RemoteAddr().String())
 
 	for {
-		n, err := conn.Read(buf)
+		cmd, err := cmd.ParseCommand(conn)
 		if err != nil {
-			log.Printf("Error reading from connection: %s", err)
+			log.Printf("Error parsing command: %s", err)
 			break
 		}
-		msg := buf[:n]
-		go s.HandleCommand(conn, msg)
+		go s.HandleCommand(conn, cmd)
 	}
-
 }
 
-func (s *Server) HandleCommand(conn net.Conn, rawCmd []byte) {
+func (s *Server) HandleCommand(conn net.Conn, command any) {
+	switch v := command.(type) {
+	case *cmd.CommandGet:
+		s.handleGetCommand(conn, v)
+	case *cmd.CommandSet:
+		s.handleSetCommand(conn, v)
+	}
+}
+
+func (s *Server) handleGetCommand(conn net.Conn, command *cmd.CommandGet) error {
+	value, err := s.Cache.Get(command.Key)
+	if err != nil {
+		log.Printf("Error getting value from cache: %s", err)
+		return err
+	}
+	conn.Write(value)
+
+	return nil
+}
+
+func (s *Server) handleSetCommand(conn net.Conn, command *cmd.CommandSet) error {
+	log.Printf("SET %s to %s", string(command.Key), string(command.Value))
+	return s.Cache.Set(command.Key, command.Value, time.Duration(command.TTL))
 
 }
