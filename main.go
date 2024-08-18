@@ -8,7 +8,6 @@ import (
 
 	"github.com/Rishi-Mishra0704/SwiftStash/cache"
 	"github.com/Rishi-Mishra0704/SwiftStash/client"
-	"github.com/Rishi-Mishra0704/SwiftStash/cmd"
 	"github.com/Rishi-Mishra0704/SwiftStash/server"
 )
 
@@ -24,37 +23,27 @@ func main() {
 	}
 
 	go func() {
-		time.Sleep(1 * time.Second)
+		time.Sleep(2 * time.Second)
 		client, err := client.NewClient(":3000", client.Options{})
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		for i := 0; i < 10; i++ {
-			SendCommand(client)
-			time.Sleep(200 * time.Millisecond)
-
+		err = client.Set(context.Background(), []byte("foo"), []byte("bar"), 0)
+		if err != nil {
+			log.Fatal(err)
 		}
+		time.Sleep(200 * time.Millisecond)
+		value, err := client.Get(context.Background(), []byte("foo"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		time.Sleep(200 * time.Millisecond)
+		log.Printf("Value: %s", value)
 		client.Close()
-		time.Sleep(1 * time.Second)
 	}()
 	s := server.NewServer(opts, cache.NewCache())
 	err := s.Start()
 	if err != nil {
 		return
 	}
-}
-
-func SendCommand(c *client.Client) {
-	command := &cmd.CommandSet{
-		Key:   []byte("foo"),
-		Value: []byte("bar"),
-		TTL:   0,
-	}
-
-	_, err := c.Set(context.Background(), command.Key, command.Value, command.TTL)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 }

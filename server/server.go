@@ -83,18 +83,31 @@ func (s *Server) HandleCommand(conn net.Conn, command any) {
 }
 
 func (s *Server) handleGetCommand(conn net.Conn, command *cmd.CommandGet) error {
+
+	resp := cmd.ResponseGet{}
 	value, err := s.Cache.Get(command.Key)
 	if err != nil {
-		log.Printf("Error getting value from cache: %s", err)
+		resp.Status = cmd.StatusError
+		_, err := conn.Write(resp.Bytes())
 		return err
 	}
-	conn.Write(value)
 
-	return nil
+	resp.Status = cmd.StatusOK
+	resp.Value = value
+	_, err = conn.Write(resp.Bytes())
+
+	return err
 }
 
 func (s *Server) handleSetCommand(conn net.Conn, command *cmd.CommandSet) error {
 	log.Printf("SET %s to %s", string(command.Key), string(command.Value))
-	return s.Cache.Set(command.Key, command.Value, time.Duration(command.TTL))
-
+	resp := &cmd.ResponseSet{}
+	if err := s.Cache.Set(command.Key, command.Value, time.Duration(command.TTL)); err != nil {
+		resp.Status = cmd.StatusError
+		_, err := conn.Write(resp.Bytes())
+		return err
+	}
+	resp.Status = cmd.StatusOK
+	_, err := conn.Write(resp.Bytes())
+	return err
 }
