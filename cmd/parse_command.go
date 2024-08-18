@@ -14,6 +14,7 @@ const (
 	CmdNone Command = iota
 	CmdSET
 	CmdGET
+	CmdJoin
 	CmdDel
 )
 
@@ -137,6 +138,8 @@ func ParseCommand(r io.Reader) (CommandParser, error) {
 		return ParseSetCommand(r), nil
 	case CmdGET:
 		return ParseGetCommand(r), nil
+	case CmdJoin:
+		return &CommandJoin{}, nil
 	default:
 		return nil, fmt.Errorf("invalid command")
 	}
@@ -184,4 +187,11 @@ func (s Status) String() string {
 	default:
 		return "INVALID"
 	}
+}
+
+type CommandJoin struct{}
+
+// Bytes satisfies the CommandParser interface
+func (r *CommandJoin) Bytes() []byte {
+	return nil
 }

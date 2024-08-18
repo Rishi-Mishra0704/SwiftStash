@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"time"
 
@@ -12,10 +13,12 @@ import (
 )
 
 func main() {
-
-	listenAddr := flag.String("listenAddr", ":3000", "Listen address of the server")
-	leaderAddr := flag.String("leaderAddr", "", "Listen address of the leader")
+	var (
+		listenAddr = flag.String("listenaddr", ":3000", "listen address of the server")
+		leaderAddr = flag.String("leaderaddr", "", "listen address of the leader")
+	)
 	flag.Parse()
+
 	opts := server.ServerOpts{
 		ListenAddr: *listenAddr,
 		IsLeader:   len(*leaderAddr) == 0,
@@ -23,27 +26,41 @@ func main() {
 	}
 
 	go func() {
-		time.Sleep(2 * time.Second)
-		client, err := client.NewClient(":3000", client.Options{})
-		if err != nil {
-			log.Fatal(err)
+		time.Sleep(time.Second * 10)
+		if opts.IsLeader {
+			SendStuff()
 		}
-		err = client.Set(context.Background(), []byte("foo"), []byte("bar"), 0)
-		if err != nil {
-			log.Fatal(err)
-		}
-		time.Sleep(200 * time.Millisecond)
-		value, err := client.Get(context.Background(), []byte("foo"))
-		if err != nil {
-			log.Fatal(err)
-		}
-		time.Sleep(200 * time.Millisecond)
-		log.Printf("Value: %s", value)
-		client.Close()
 	}()
-	s := server.NewServer(opts, cache.NewCache())
-	err := s.Start()
-	if err != nil {
-		return
+
+	server := server.NewServer(opts, cache.NewCache())
+	_ = server.Start()
+}
+
+func SendStuff() {
+	for i := 0; i < 100; i++ {
+		go func(i int) {
+			c, err := client.NewClient(":3000", client.Options{})
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			var (
+				key   = []byte(fmt.Sprintf("key_%d", i))
+				value = []byte(fmt.Sprintf("val_%d", i))
+			)
+
+			err = c.Set(context.Background(), key, value, 0)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fetchedValue, err := c.Get(context.Background(), key)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println(string(fetchedValue))
+
+			_ = c.Close()
+		}(i)
 	}
 }

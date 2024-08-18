@@ -78,3 +78,9 @@ func (c *Client) Get(ctx context.Context, key []byte) ([]byte, error) {
 func (c *Client) Close() error {
 	return c.Conn.Close()
 }
+
+func NewFromConn(conn net.Conn) *Client {
+	return &Client{
+		Conn: conn,
+	}
+}
